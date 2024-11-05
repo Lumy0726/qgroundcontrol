@@ -101,16 +101,6 @@ typedef enum : uint8_t {
 // To, 'QGCMAVLink.cc'
 // int key_flag = 0;
 
-// Declare global variable that 'mesl crypto library' use.
-// This is required,
-//   because of current implementation of 'mesl crypto library',
-//   has some limitation for AES128_CTR.
-//     AES128_CTR has non thread-safety implementation,
-//       so this source code calls internal function directly to solve this,
-//       and that required 'AES_key' value.
-
-extern byte AES_key[MAX_AES_KEY_IDX][16];
-
 #endif // #ifdef MESL_CRYPTO
 
 
@@ -173,23 +163,13 @@ MAVLINK_HELPER int32_t mavlink_mesl_encrypt(
 {
 	if (crypto_method == MESL_CRYPTO_METHOD_AES128) {
 		AES aes_ctr;
-		aes_ctr.ctr_initialize();
-		memcpy(
-				dst,
-				src,
-				len);
-		aes_ctr.ctr_encrypt(
-				// Because of wrong parameter or wrong implementation,
-				//   of 'mesl crypto library', just pass NULL.
-				(byte*)0,
+		Initialize_AES128_CTR(&aes_ctr);
+		Encrypt_AES128_CTR(
+				&aes_ctr,
+				0,
+				(uint8_t*)src,
 				(int)len,
-				// Because of wrong parameter or wrong implementation,
-				//   of 'mesl crypto library',
-				//   pass source data to here,
-				//   and get en/de/crypted data from here.
-				(byte*)dst,
-				AES_key[0],
-				128
+				(uint8_t*)dst
 				);
 		return (int32_t)len;
 	}
@@ -236,23 +216,13 @@ MAVLINK_HELPER int32_t mavlink_mesl_decrypt(
 #ifdef MESL_MAVLINK_DEBUG
 mavlink_mesl_crypto_rxpl_debug(src, (int)len);
 #endif // #ifdef MESL_MAVLINK_DEBUG
-		aes_ctr.ctr_initialize();
-		memcpy(
-				dst,
-				src,
-				len);
-		aes_ctr.ctr_encrypt(
-				// Because of wrong parameter or wrong implementation,
-				//   of 'mesl crypto library', just pass NULL.
-				(byte*)0,
+		Initialize_AES128_CTR(&aes_ctr);
+		Decrypt_AES128_CTR(
+				&aes_ctr,
+				0,
+				(uint8_t*)src,
 				(int)len,
-				// Because of wrong parameter or wrong implementation,
-				//   of 'mesl crypto library',
-				//   pass source data to here,
-				//   and get en/de/crypted data from here.
-				(byte*)dst,
-				AES_key[0],
-				128
+				(uint8_t*)dst
 				);
 		return (int32_t)len;
 	}
