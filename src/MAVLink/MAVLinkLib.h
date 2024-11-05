@@ -83,6 +83,39 @@ typedef enum : uint8_t {
 
 
 // -------------------------------------------------------
+// Include external crypto library
+// -------------------------------------------------------
+
+#ifdef MESL_CRYPTO
+
+// Include 'mesl crypto library', of PX4 autopilot.
+// 'mesl crypto library' has been included at QGC,
+//   with just source-file-copy method, for now.
+
+#include "mc.h"
+
+// Make global variable that 'mesl_crypto_library' use.
+// For PX4, 'key_flag' is on 'se' driver.
+// But QGC doesn't have 'se' driver now, so just add this.
+//
+// To, 'QGCMAVLink.cc'
+// int key_flag = 0;
+
+// Declare global variable that 'mesl crypto library' use.
+// This is required,
+//   because of current implementation of 'mesl crypto library',
+//   has some limitation for AES128_CTR.
+//     AES128_CTR has non thread-safety implementation,
+//       so this source code calls internal function directly to solve this,
+//       and that required 'AES_key' value.
+
+extern byte AES_key[MAX_AES_KEY_IDX][16];
+
+#endif // #ifdef MESL_CRYPTO
+
+
+
+// -------------------------------------------------------
 // Declare or implement, for MESL_CRYPTO related things.
 //   NOTE: 'MAVLINK_HELPER' is 'static inline' by default.
 // -------------------------------------------------------
@@ -138,22 +171,43 @@ MAVLINK_HELPER int32_t mavlink_mesl_encrypt(
 		uint8_t maxlen
 		)
 {
-	if (crypto_method != MESL_CRYPTO_METHOD_USER7) {
-		// qCWarning(QGCMAVLinkLog) <<
-		//   "MESL_CRYPTO: invalid crypto method requested";
-		return (int32_t)-1;
+	if (crypto_method == MESL_CRYPTO_METHOD_AES128) {
+		AES aes_ctr;
+		aes_ctr.ctr_initialize();
+		memcpy(
+				dst,
+				src,
+				len);
+		aes_ctr.ctr_encrypt(
+				// Because of wrong parameter or wrong implementation,
+				//   of 'mesl crypto library', just pass NULL.
+				(byte*)0,
+				(int)len,
+				// Because of wrong parameter or wrong implementation,
+				//   of 'mesl crypto library',
+				//   pass source data to here,
+				//   and get en/de/crypted data from here.
+				(byte*)dst,
+				AES_key[0],
+				128
+				);
+		return (int32_t)len;
 	}
-
-	// User defined encryption:
-	//   XOR with key '0xab', for test.
-	memcpy(
-			dst,
-			src,
-			len);
-	for (uint8_t i = (uint8_t)0; i < len; i++) {
-		dst[i] ^= 0xab;
+	if (crypto_method == MESL_CRYPTO_METHOD_USER7) {
+		// User defined encryption:
+		//   XOR with key '0xab', for test.
+		memcpy(
+				dst,
+				src,
+				len);
+		for (uint8_t i = (uint8_t)0; i < len; i++) {
+			dst[i] ^= 0xab;
+		}
+		return (int32_t)len;
 	}
-	return (int32_t)len;
+	// qCWarning(QGCMAVLinkLog) <<
+	//   "MESL_CRYPTO: invalid crypto method requested";
+	return (int32_t)-1;
 }
 
 // @brief  Function to decrypt MAVLink payload.
@@ -177,20 +231,44 @@ MAVLINK_HELPER int32_t mavlink_mesl_decrypt(
 		uint8_t maxlen
 		)
 {
-	if (crypto_method != MESL_CRYPTO_METHOD_USER7) {
-		return (int32_t)-1;
+	if (crypto_method == MESL_CRYPTO_METHOD_AES128) {
+		AES aes_ctr;
+#ifdef MESL_MAVLINK_DEBUG
+mavlink_mesl_crypto_rxpl_debug(src, (int)len);
+#endif // #ifdef MESL_MAVLINK_DEBUG
+		aes_ctr.ctr_initialize();
+		memcpy(
+				dst,
+				src,
+				len);
+		aes_ctr.ctr_encrypt(
+				// Because of wrong parameter or wrong implementation,
+				//   of 'mesl crypto library', just pass NULL.
+				(byte*)0,
+				(int)len,
+				// Because of wrong parameter or wrong implementation,
+				//   of 'mesl crypto library',
+				//   pass source data to here,
+				//   and get en/de/crypted data from here.
+				(byte*)dst,
+				AES_key[0],
+				128
+				);
+		return (int32_t)len;
 	}
-
-	// User defined encryption:
-	//   XOR with key '0xab', for test.
-	memcpy(
-			dst,
-			src,
-			len);
-	for (uint8_t i = (uint8_t)0; i < len; i++) {
-		dst[i] ^= 0xab;
+	if (crypto_method == MESL_CRYPTO_METHOD_USER7) {
+		// User defined encryption:
+		//   XOR with key '0xab', for test.
+		memcpy(
+				dst,
+				src,
+				len);
+		for (uint8_t i = (uint8_t)0; i < len; i++) {
+			dst[i] ^= 0xab;
+		}
+		return (int32_t)len;
 	}
-	return (int32_t)len;
+	return (int32_t)-1;
 }
 
 #endif // #ifdef MESL_CRYPTO

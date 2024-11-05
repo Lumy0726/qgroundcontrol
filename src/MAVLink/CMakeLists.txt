@@ -18,6 +18,16 @@ qt_add_library(MAVLink STATIC
     StatusTextHandler.h
     SysStatusSensorInfo.cc
     SysStatusSensorInfo.h
+
+    mc.cpp
+    mc.h
+    AES.cpp
+    AES.h
+    AES_config.h
+    RSA.cpp
+    RSA.h
+    SHA.cpp
+    SHA.h
 )
 
 target_link_libraries(MAVLink

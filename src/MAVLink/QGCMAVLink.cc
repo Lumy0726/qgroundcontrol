@@ -422,8 +422,19 @@ uint32_t QGCMAVLink::highLatencyFailuresToMavSysStatus(mavlink_high_latency2_t& 
 
 
 
+// -------------------------------------------------------
+// Implement, for MESL_CRYPTO related things.
+// -------------------------------------------------------
 
+#ifdef MESL_CRYPTO
 
+// Make global variable that 'mesl_crypto_library' use.
+// For PX4, 'key_flag' is on 'se' driver.
+// But QGC doesn't have 'se' driver now, so just add this.
+
+int key_flag = 0;
+
+#endif // #ifdef MESL_CRYPTO
 
 
 #ifdef MAVLINK_USE_CXX_NAMESPACE
