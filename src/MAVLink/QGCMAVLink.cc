@@ -414,3 +414,105 @@ uint32_t QGCMAVLink::highLatencyFailuresToMavSysStatus(mavlink_high_latency2_t& 
 
     return onboardControlSensorsEnabled;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef MAVLINK_USE_CXX_NAMESPACE
+namespace mavlink {
+#endif
+
+#ifdef MESL_MAVLINK_DEBUG
+void mavlink_mesl_crypto_rxpl_debug(const char* pl, int len) {
+	unsigned char pl4[4] = {0, };
+	memcpy(
+			(char*)pl4,
+			(const char*)(pl),
+			(len > (uint8_t)4) ? 4 : len);
+			// qCInfo(QGCMAVLinkLog) << Q_FUNC_INFO << "qcInfo";
+	printf("  encrypted rx pl4(%02x%02x%02x%02x)\n",
+			pl4[0],
+			pl4[1],
+			pl4[2],
+			pl4[3]
+			);
+}
+#endif // #ifdef MESL_MAVLINK_DEBUG
+
+#ifdef MESL_MAVLINK_DEBUG
+
+// @brief  Function for debug MAVLink frame parsing result.'
+//           This function is for non-static non-inline function.
+void mavlink_mesl_parse_result_f(
+		const mavlink_message_t* rxmsg,
+		const mavlink_status_t* status
+		)
+{
+	if (rxmsg == NULL) { return; }
+#ifdef MAVLINK_USE_MESSAGE_INFO
+	const mavlink_message_info_t *msginfo =
+		mavlink_get_message_info_by_id(rxmsg->msgid);
+#endif
+	unsigned char pl4[4] = {0, };
+	memcpy(
+			(char*)pl4,
+			(const char*)(rxmsg->payload64),
+			(rxmsg->len > (uint8_t)4) ? 4 : rxmsg->len);
+	// px4_usleep(500000);
+	if (! status) {
+		printf("[PARSE_RESULT Error: (mavlink_status_t* == NULL)]:\n");
+		return;
+	}
+	// temp test code, only print HEARTBEAT msg.
+	// if ((int)msgid) { return; }
+
+#ifdef MAVLINK_USE_MESSAGE_INFO
+	if (msginfo) {
+		printf(
+				"[PARSE_RESULT status_flag(%d) ret(%d) msgname(%s)]:\n",
+				(int)(status->flags),
+				(int)(status->msg_received),
+				msginfo->name
+				);
+	}
+	else {
+		printf("[CRYPT_COND (CANNOT GET MESSAGE INFO)]:\n");
+	}
+#else
+	printf(
+			"[PARSE_RESULT status_flag(%d) ret(%d) msgid(%d)]:\n",
+			(int)(status->flags),
+			(int)(status->msg_received),
+			(int)(rxmsg->msgid)
+			);
+#endif
+	printf("  :  msg(%d) seq(%d) iflag(0x%02x) sys(%d) comp(%d) len(%d) pl4(%02x%02x%02x%02x)\n",
+			(int)rxmsg->msgid,
+			(int)rxmsg->seq,
+			(unsigned int)rxmsg->incompat_flags,
+			(int)rxmsg->sysid,
+			(int)rxmsg->compid,
+			(int)rxmsg->len,
+			pl4[0],
+			pl4[1],
+			pl4[2],
+			pl4[3]
+			);
+}
+
+#endif // #ifdef MESL_MAVLINK_DEBUG
+
+#ifdef MAVLINK_USE_CXX_NAMESPACE
+} // namespace mavlink
+#endif
+
+
+

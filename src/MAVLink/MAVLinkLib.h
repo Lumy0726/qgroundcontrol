@@ -43,7 +43,7 @@ typedef enum : uint8_t {
 
 #define MESL_CRYPTO
 //#define MESL_MAVLINK_PARSE_FIX
-//#define MESL_MAVLINK_DEBUG
+#define MESL_MAVLINK_DEBUG
 
 
 
@@ -90,6 +90,10 @@ typedef enum : uint8_t {
 #ifdef MAVLINK_USE_CXX_NAMESPACE
 namespace mavlink {
 #endif
+
+#ifdef MESL_MAVLINK_DEBUG
+void mavlink_mesl_crypto_rxpl_debug(const char* pl, int len);
+#endif // #ifdef MESL_MAVLINK_DEBUG
 
 #ifdef MESL_CRYPTO
 
@@ -190,6 +194,26 @@ MAVLINK_HELPER int32_t mavlink_mesl_decrypt(
 }
 
 #endif // #ifdef MESL_CRYPTO
+
+#ifdef MESL_MAVLINK_DEBUG
+
+// @brief  Function for debug MAVLink frame parsing result.'
+//           This function is for non-static non-inline function.
+void mavlink_mesl_parse_result_f(
+		const mavlink_message_t* rxmsg,
+		const mavlink_status_t* status
+		);
+
+// @brief  Function for debug MAVLink frame parsing result.'
+MAVLINK_HELPER void mavlink_mesl_parse_result(
+		const mavlink_message_t* rxmsg,
+		const mavlink_status_t* status
+		)
+{
+	mavlink_mesl_parse_result_f(rxmsg, status);
+}
+
+#endif // #ifdef MESL_MAVLINK_DEBUG
 
 #ifdef MAVLINK_USE_CXX_NAMESPACE
 } // namespace mavlink
